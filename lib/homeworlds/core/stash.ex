@@ -13,6 +13,12 @@ defmodule Homeworlds.Core.Stash do
     %__MODULE__{pyramids: pyramids}
   end
 
+  def find(%__MODULE__{pyramids: pyramids}, pyramid_id) do
+    Enum.reduce_while(pyramids, false, fn pyramid, acc ->
+      if pyramid.id == pyramid_id, do: {:halt, true}, else: {:cont, acc}
+    end)
+  end
+
   def add(%__MODULE__{pyramids: pyramids} = stash, pyramid) do
     %__MODULE__{stash | pyramids: [pyramid | pyramids]}
   end

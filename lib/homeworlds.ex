@@ -1,18 +1,11 @@
 defmodule Homeworlds do
   @moduledoc """
-  Documentation for `Homeworlds`.
-  """
-
-  @doc """
-  Hello world.
-
-  ## Examples
-
-      iex> Homeworlds.hello()
-      :world
 
   """
-  def hello do
-    :world
+  alias Homeworlds.Boundary.GameManager
+  alias Homeworlds.Boundary.GameSession
+
+  def create_game(player) do
+    GameManager.create_game(player)
   end
 end

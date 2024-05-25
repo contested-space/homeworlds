@@ -8,8 +8,8 @@ defmodule Homeworlds.Application do
   @impl true
   def start(_type, _args) do
     children = [
-      # Starts a worker by calling: Homeworlds.Worker.start_link(arg)
-      # {Homeworlds.Worker, arg}
+      {Homeworlds.Boundary.GameManager, [name: Homeworlds.Boundary.GameManager]},
+      {DynamicSupervisor, [name: Homeworlds.Supervisor.GameSession, strategy: :one_for_one]}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

@@ -15,13 +15,25 @@ defmodule Homeworlds.Core.Bank do
   @type t() :: %__MODULE__{stash: MapSet.t()}
 
   def new() do
+    # %__MODULE__{
+    #   stash: Stash.new(
+    #     # TODO: Maybe refactor all_colours/0 to be owned by another module, it should become configurable too.
+    #     for colour <- Pyramid.all_colours(), size <- Pyramid.all_sizes() do
+    #       List.duplicate({colour, size}, 3) # TODO: make configurable number of stacks for each size/colour combination
+    #     end
+    #     |> List.flatten()
+    #     |> Enum.map(fn {colour, size} -> Pyramid.new(colour, size) end)
+    #   )
+    # }
+
     %__MODULE__{
-      stash: Stash.new(
-        # TODO: Maybe refactor all_colours/0 to be owned by another module, it should become configurable too.
-        for colour <- Pyramid.all_colours(), size <- Pyramid.all_sizes() do
-          Pyramid.new(colour, size)
-        end
-      )
+      stash:
+        Stash.new(
+          # TODO: Maybe refactor all_colours/0 to be owned by another module, it should become configurable too.
+          [{:blue, 1}, {:yellow, 2}, {:green, 3}]
+          |> List.flatten()
+          |> Enum.map(fn {colour, size} -> Pyramid.new(colour, size) end)
+        )
     }
   end
 
@@ -45,5 +57,13 @@ defmodule Homeworlds.Core.Bank do
   def take(%__MODULE__{stash: stash} = bank, pyramid_id) do
     {pyramid, stash} = Stash.take(stash, pyramid_id)
     {pyramid, %__MODULE__{bank | stash: stash}}
+  end
+
+  def find(%__MODULE__{stash: stash} = _bank, pyramid_id) do
+    if Stash.find(stash, pyramid_id) do
+      :bank
+    else
+      false
+    end
   end
 end

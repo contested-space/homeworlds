@@ -1,5 +1,4 @@
 defmodule Homeworlds.Core.Board do
-
   alias Homeworlds.Core.Bank
   alias Homeworlds.Core.System
 
@@ -21,6 +20,23 @@ defmodule Homeworlds.Core.Board do
     }
   end
 
+  def find_origin(%__MODULE__{bank: bank, systems: systems} = _board, pyramid_id) do
+    if Bank.find(bank, pyramid_id) do
+      :bank
+    else
+      find_pyramid_in_systems(systems, pyramid_id)
+    end
+  end
+
+  def find_pyramid_in_systems(systems, pyramid_id) do
+    Enum.reduce_while(systems, false, fn system, acc ->
+      case System.find(system, pyramid_id) do
+        false -> {:cont, acc}
+        val -> {:halt, val}
+      end
+    end)
+  end
+
   # possible locations:
   # :bank
   # System.id
@@ -36,7 +52,6 @@ defmodule Homeworlds.Core.Board do
     %__MODULE__{board | bank: new_bank, held_in_hand: nil}
   end
 
-
   # If a system is provided, select/2 replaces the existing selected system
   defp update_selected_system(%__MODULE__{} = board, %System{} = system) do
     %__MODULE__{board | selected: system}
@@ -49,20 +64,28 @@ defmodule Homeworlds.Core.Board do
     %__MODULE__{board | systems: other_systems, selected: system}
   end
 
-  defp unselect_system(%__MODULE__{systems: systems, selected: selected_system} = board) do
-    %__MODULE__{board | systems: [selected_system | systems]}
+  defp unselect_system(%__MODULE__{systems: systems, selected: nil} = board) do
+    %__MODULE__{board | systems: systems}
   end
 
-  def add_ship_to_system(%__MODULE__{held_in_hand: pyramid} = board, system_id, owner) when not is_nil(pyramid) do
+  defp unselect_system(%__MODULE__{systems: systems, selected: selected_system} = board) do
+    %__MODULE__{board | systems: [selected_system | systems], selected: nil}
+  end
+
+  def add_ship_to_system(%__MODULE__{held_in_hand: pyramid} = board, system_id, owner)
+      when not is_nil(pyramid) do
     board
     |> select_system(system_id)
     |> add_ship_to_selected_system(owner)
     |> unselect_system()
   end
 
-  def add_ship_to_selected_system(%__MODULE{held_in_hand: pyramid, selected: system}, owner) do
+  def add_ship_to_selected_system(
+        %__MODULE__{held_in_hand: pyramid, selected: system} = board,
+        owner
+      ) do
     new_system = System.add_ship(system, pyramid, owner)
-    %__MODULE__{selected: new_system, held_in_hand: nil}
+    %__MODULE__{board | selected: new_system, held_in_hand: nil}
   end
 
   def take_ship_from_system(%__MODULE__{held_in_hand: nil} = board, system_id, ship_pyramid_id) do
@@ -72,20 +95,28 @@ defmodule Homeworlds.Core.Board do
     |> unselect_system()
   end
 
-  def take_ship_from_selected_system(%__MODULE__{selected: system, held_in_hand: nil} = board, ship_pyramid_id) do
+  def take_ship_from_selected_system(
+        %__MODULE__{selected: system, held_in_hand: nil} = board,
+        ship_pyramid_id
+      ) do
     {pyramid, new_system} = System.take_ship(system, ship_pyramid_id)
     %__MODULE__{board | selected: new_system, held_in_hand: pyramid}
   end
 
   # If no system is selected, create a new one
   def add_star_to_system(board, system_id \\ nil)
-  def add_star_to_system(%__MODULE__{systems: systems, held_in_hand: pyramid, selected: nil} = board, nil) do
+
+  def add_star_to_system(
+        %__MODULE__{systems: systems, held_in_hand: pyramid, selected: nil} = board,
+        nil
+      ) do
     new_system = System.new(pyramid)
     %__MODULE__{board | systems: [new_system | systems], held_in_hand: nil, selected: nil}
   end
 
   # If a system is selected, make it an n-ary system
-  def add_star_to_system(%__MODULE__{held_in_hand: pyramid} = board, system_id) when not is_nil(pyramid) do
+  def add_star_to_system(%__MODULE__{held_in_hand: pyramid} = board, system_id)
+      when not is_nil(pyramid) do
     board
     |> select_system(system_id)
     |> add_star_to_selected_system()
@@ -94,6 +125,7 @@ defmodule Homeworlds.Core.Board do
 
   def add_star_to_selected_system(%__MODULE{held_in_hand: pyramid, selected: system} = board) do
     new_system = System.add_star(system, pyramid)
+
     board
     |> update_selected_system(new_system)
     |> empty_hand()
@@ -116,10 +148,12 @@ defmodule Homeworlds.Core.Board do
 
   def take_star_from_selected_system(%__MODULE__{selected: system} = board, star_pyramid_id) do
     case System.take_star(system, star_pyramid_id) do
-      {pyramid, %System{stars: []}} ->
+      {pyramid, %System{stars: stars}} when map_size(stars) == 0 ->
         board
         |> hold_in_hand(pyramid)
         |> destroy_selected_system()
+        |> unselect_system()
+
       {pyramid, new_system} ->
         board
         |> hold_in_hand(pyramid)
@@ -128,11 +162,10 @@ defmodule Homeworlds.Core.Board do
   end
 
   def destroy_selected_system(%__MODULE__{bank: bank, selected: system} = board) do
-    ships = System.take_all_ships(system)
+    {ships, _new_system} = System.take_all_ships(system)
     new_bank = Bank.add_many(bank, ships)
     %__MODULE__{board | bank: new_bank, selected: nil}
   end
-
 
   def generate_name() do
     :crypto.strong_rand_bytes(16)
@@ -142,11 +175,15 @@ defmodule Homeworlds.Core.Board do
     Enum.random(players)
   end
 
-  #TODO: Deduplicate that and the one in Stash
+  # TODO: Deduplicate that and the one in Stash
   defp list_pop(list, fun) do
-    [elem] = Enum.filter(list, fun)
-    new_list = List.delete(list, elem)
-    {elem, new_list}
-  end
+    case Enum.filter(list, fun) do
+      [elem] ->
+        new_list = List.delete(list, elem)
+        {elem, new_list}
 
+      _ ->
+        {nil, list}
+    end
+  end
 end

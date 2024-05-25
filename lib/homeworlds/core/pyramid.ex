@@ -1,11 +1,16 @@
 defmodule Homeworlds.Core.Pyramid do
-
   @type id :: reference()
   @type colour :: :red | :blue | :yellow | :green
   @type size :: pos_integer()
   @type role :: :ship | :star | :resource
   @type owner :: any()
-  @type t :: %__MODULE__{id: reference(), colour: colour(), size: size(), role: role(), owner: owner()}
+  @type t :: %__MODULE__{
+          id: reference(),
+          colour: colour(),
+          size: size(),
+          role: role(),
+          owner: owner()
+        }
 
   defstruct [
     :id,
@@ -42,7 +47,7 @@ defmodule Homeworlds.Core.Pyramid do
     %__MODULE__{pyramid | role: :resource, owner: nil}
   end
 
-  #TODO: turn that and the colour type into macros
+  # TODO: turn that and the colour type into macros
   @spec all_colours() :: [colour()]
   def all_colours() do
     [
