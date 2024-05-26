@@ -3,9 +3,7 @@ defmodule Homeworlds do
 
   """
   alias Homeworlds.Boundary.GameManager
-  alias Homeworlds.Boundary.GameSession
 
-  def create_game(player) do
-    GameManager.create_game(player)
-  end
+  defdelegate create_game(player), to: GameManager
+  defdelegate join_game(game_id, player), to: GameManager
 end

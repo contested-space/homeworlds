@@ -7,17 +7,22 @@ defmodule Homeworlds.Core.Board do
     :systems,
     :selected,
     :held_in_hand,
-    :active_player
+    :active_player,
+    players: []
   ]
 
-  def new(players) do
+  def new() do
     %__MODULE__{
       bank: Bank.new(),
       systems: [],
       selected: nil,
       held_in_hand: nil,
-      active_player: select_first_player(players)
+      active_player: nil
     }
+  end
+
+  def add_player(%__MODULE__{players: players} = board, player) do
+    %__MODULE__{board | players: [player | players]}
   end
 
   def find_origin(%__MODULE__{bank: bank, systems: systems} = _board, pyramid_id) do
