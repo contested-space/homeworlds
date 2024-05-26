@@ -17,6 +17,7 @@ defmodule Homeworlds.Boundary.GameSession do
     }
   end
 
+  @impl GenServer
   def init(_opts) do
     board = Homeworlds.Core.Board.new()
     {:ok, %State{board: board}}
@@ -29,7 +30,7 @@ defmodule Homeworlds.Boundary.GameSession do
     )
   end
 
-  def start_game(opts \\ nil) do
+  def create_game(opts \\ nil) do
     DynamicSupervisor.start_child(
       Homeworlds.Supervisor.GameSession,
       {__MODULE__, opts}
@@ -40,8 +41,16 @@ defmodule Homeworlds.Boundary.GameSession do
     GenServer.call(game_pid, {:join, player})
   end
 
+  def start_game(game_pid) do
+    GenServer.call(game_pid, :start)
+  end
+
   def get_board_state(game_session_pid) do
     GenServer.call(game_session_pid, :get_board_state)
+  end
+
+  def get_active_player(game_session_pid) do
+    GenServer.call(game_session_pid, :get_active_player)
   end
 
   @impl GenServer
@@ -51,7 +60,17 @@ defmodule Homeworlds.Boundary.GameSession do
     {:reply, :ok, %State{state | board: new_board}}
   end
 
+  def handle_call(:start, _from, %State{board: board} = state) do
+    new_board = Board.start_game(board)
+    {:reply, :ok, %State{state | board: new_board}}
+  end
+
   def handle_call(:get_board_state, _from, %State{board: board} = state) do
     {:reply, board, state}
+  end
+
+  def handle_call(:get_active_player, _from, %State{board: board} = state) do
+    result = Board.active_player(board)
+    {:reply, result, state}
   end
 end

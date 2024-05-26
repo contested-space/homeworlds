@@ -7,8 +7,9 @@ defmodule Homeworlds.Core.Board do
     :systems,
     :selected,
     :held_in_hand,
-    :active_player,
-    players: []
+    players: [],
+    turn_order: [],
+    status: nil
   ]
 
   def new() do
@@ -17,12 +18,24 @@ defmodule Homeworlds.Core.Board do
       systems: [],
       selected: nil,
       held_in_hand: nil,
-      active_player: nil
+      turn_order: [],
+      status: :created
     }
   end
 
   def add_player(%__MODULE__{players: players} = board, player) do
     %__MODULE__{board | players: [player | players]}
+  end
+
+  def start_game(%__MODULE__{players: players} = board) do
+    turn_order = Enum.shuffle(players)
+    %__MODULE__{board | turn_order: turn_order, status: :ongoing}
+  end
+
+  def active_player(%__MODULE__{turn_order: [active_player | _]}), do: active_player
+
+  def finish_turn(%__MODULE__{turn_order: [active_player, other_players]} = board) do
+    %__MODULE__{board | turn_order: other_players ++ [active_player]}
   end
 
   def find_origin(%__MODULE__{bank: bank, systems: systems} = _board, pyramid_id) do
@@ -174,10 +187,6 @@ defmodule Homeworlds.Core.Board do
 
   def generate_name() do
     :crypto.strong_rand_bytes(16)
-  end
-
-  defp select_first_player(players) when is_list(players) do
-    Enum.random(players)
   end
 
   # TODO: Deduplicate that and the one in Stash

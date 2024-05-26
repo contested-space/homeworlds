@@ -33,6 +33,11 @@ defmodule Homeworlds.Boundary.GameManager do
     |> GenServer.call({:create_game, opts})
   end
 
+  def start_game(game_id) do
+    :erlang.whereis(__MODULE__)
+    |> GenServer.call({:start_game, game_id})
+  end
+
   def find_game(game_id) when is_reference(game_id) do
     :erlang.whereis(__MODULE__)
     |> GenServer.call({:find_game, game_id})
@@ -48,10 +53,20 @@ defmodule Homeworlds.Boundary.GameManager do
     |> GenServer.call({:join_game, game_id, player})
   end
 
+  def get_active_player(game_id) do
+    :erlang.whereis(__MODULE__)
+    |> GenServer.call({:get_active_player, game_id})
+  end
+
+  def get_board_state(game_id) do
+    :erlang.whereis(__MODULE__)
+    |> GenServer.call({:get_board_state, game_id})
+  end
+
   @impl GenServer
   def handle_call({:create_game, _opts}, _from, %State{games: games} = state) do
     game_id = make_ref()
-    {:ok, game_session_pid} = GameSession.start_game(%{game_id: game_id})
+    {:ok, game_session_pid} = GameSession.create_game(%{game_id: game_id})
     info = %Info{players: [], game_id: game_id, session_pid: game_session_pid}
     {:reply, info, %State{state | games: [info | games]}}
   end
@@ -76,6 +91,36 @@ defmodule Homeworlds.Boundary.GameManager do
     new_game_info = %Info{game_info | players: [player | players]}
 
     {:reply, result, %State{state | games: [new_game_info | other_games]}}
+  end
+
+  def handle_call({:start_game, game_id}, _from, %State{} = state) do
+    game_info =
+      find_game_by_id(state, game_id)
+
+    # TODO: validate result before adding player to game info
+    result = GameSession.start_game(game_info.session_pid)
+
+    {:reply, result, state}
+  end
+
+  def handle_call({:get_active_player, game_id}, _from, %State{} = state) do
+    game_info =
+      find_game_by_id(state, game_id)
+
+    # TODO: validate result before adding player to game info
+    result = GameSession.get_active_player(game_info.session_pid)
+
+    {:reply, result, state}
+  end
+
+  def handle_call({:get_board_state, game_id}, _from, %State{} = state) do
+    game_info =
+      find_game_by_id(state, game_id)
+
+    # TODO: validate result before adding player to game info
+    result = GameSession.get_board_state(game_info.session_pid)
+
+    {:reply, result, state}
   end
 
   def handle_call({:find_game_by_id, id}, _from, %State{games: games} = state) do
