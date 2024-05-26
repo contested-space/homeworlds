@@ -3,7 +3,7 @@ defmodule Homeworlds.Boundary.GameManager do
   use GenServer
 
   defmodule State do
-    defstruct [:games]
+    defstruct games: []
   end
 
   defmodule Info do
@@ -38,6 +38,11 @@ defmodule Homeworlds.Boundary.GameManager do
     |> GenServer.call({:find_game, game_id})
   end
 
+  def find_games_with_player(player) do
+    :erlang.whereis(__MODULE__)
+    |> GenServer.call({:find_games_with_player, player})
+  end
+
   def join_game(game_id, player) do
     :erlang.whereis(__MODULE__)
     |> GenServer.call({:join_game, game_id, player})
@@ -54,6 +59,11 @@ defmodule Homeworlds.Boundary.GameManager do
   def handle_call({:find_game, game_id}, _from, %State{} = state) do
     game_info = find_game_by_id(state, game_id)
     {:reply, game_info, state}
+  end
+
+  def handle_call({:find_games_with_player, player}, _from, %State{} = state) do
+    games = find_games_by_player(state, player)
+    {:reply, games, state}
   end
 
   def handle_call({:join_game, game_id, player}, _from, %State{} = state) do
@@ -80,6 +90,11 @@ defmodule Homeworlds.Boundary.GameManager do
     game_info = find_game_by_id(state, game_id)
     other_games = List.delete(games, game_info)
     {%State{state | games: other_games}, game_info}
+  end
+
+  defp find_games_by_player(%State{games: games}, player) do
+    games
+    |> Enum.filter(&(player in &1.players))
   end
 
   defp find_game_by_id(%State{games: games}, game_id) do
