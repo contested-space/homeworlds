@@ -34,7 +34,7 @@ defmodule Homeworlds.Core.Board do
 
   def active_player(%__MODULE__{turn_order: [active_player | _]}), do: active_player
 
-  def finish_turn(%__MODULE__{turn_order: [active_player, other_players]} = board) do
+  def finish_turn(%__MODULE__{turn_order: [active_player | other_players]} = board) do
     %__MODULE__{board | turn_order: other_players ++ [active_player]}
   end
 

@@ -63,6 +63,11 @@ defmodule Homeworlds.Boundary.GameManager do
     |> GenServer.call({:get_board_state, game_id})
   end
 
+  def finish_turn(game_id) do
+    :erlang.whereis(__MODULE__)
+    |> GenServer.call({:finish_turn, game_id})
+  end
+
   @impl GenServer
   def handle_call({:create_game, _opts}, _from, %State{games: games} = state) do
     game_id = make_ref()
@@ -109,6 +114,16 @@ defmodule Homeworlds.Boundary.GameManager do
 
     # TODO: validate result before adding player to game info
     result = GameSession.get_active_player(game_info.session_pid)
+
+    {:reply, result, state}
+  end
+
+  def handle_call({:finish_turn, game_id}, _from, %State{} = state) do
+    game_info =
+      find_game_by_id(state, game_id)
+
+    # TODO: validate result before adding player to game info
+    result = GameSession.finish_turn(game_info.session_pid)
 
     {:reply, result, state}
   end

@@ -53,6 +53,10 @@ defmodule Homeworlds.Boundary.GameSession do
     GenServer.call(game_session_pid, :get_active_player)
   end
 
+  def finish_turn(game_session_pid) do
+    GenServer.call(game_session_pid, :finish_turn)
+  end
+
   @impl GenServer
 
   def handle_call({:join, player}, _from, %State{board: board} = state) do
@@ -72,5 +76,10 @@ defmodule Homeworlds.Boundary.GameSession do
   def handle_call(:get_active_player, _from, %State{board: board} = state) do
     result = Board.active_player(board)
     {:reply, result, state}
+  end
+
+  def handle_call(:finish_turn, _from, %State{board: board} = state) do
+    new_board = Board.finish_turn(board)
+    {:reply, :ok, %State{state | board: new_board}}
   end
 end
