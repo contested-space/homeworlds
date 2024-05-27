@@ -28,6 +28,10 @@ defmodule Homeworlds.Core.Stash do
     {pyramid, %__MODULE__{pyramids: new_pyramids}}
   end
 
+  def has_piece?(%__MODULE__{pyramids: pyramids}, {colour, size}) do
+    Enum.find(pyramids, &(&1.colour == colour and &1.size == size))
+  end
+
   defp list_pop_take(list, fun) do
     [elem] = Enum.filter(list, fun)
     new_list = List.delete(list, elem)

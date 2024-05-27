@@ -60,6 +60,10 @@ defmodule Homeworlds.Core.Board do
   # System.id
   # select_entity(board, location, id)
 
+  def bank_has_piece?(%__MODULE__{bank: bank}, piece) do
+    Bank.has_piece?(bank, piece)
+  end
+
   def take_resource_from_bank(%__MODULE__{bank: bank, held_in_hand: nil} = board, pyramid_id) do
     {pyramid, new_bank} = Bank.take(bank, pyramid_id)
     %__MODULE__{board | bank: new_bank, held_in_hand: pyramid}

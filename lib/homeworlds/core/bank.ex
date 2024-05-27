@@ -14,7 +14,7 @@ defmodule Homeworlds.Core.Bank do
 
   @type t() :: %__MODULE__{stash: MapSet.t()}
 
-  def new() do
+  def new(options \\ []) do
     # %__MODULE__{
     #   stash: Stash.new(
     #     # TODO: Maybe refactor all_colours/0 to be owned by another module, it should become configurable too.
@@ -46,7 +46,7 @@ defmodule Homeworlds.Core.Bank do
   end
 
   def show_resources(%__MODULE__{stash: stash}) do
-    Enum.group_by(stash, fn pyramid -> pyramid.colour end, fn pyramid -> pyramid end)
+    Enum.group_by(stash.pyramids, fn pyramid -> pyramid.colour end, fn pyramid -> pyramid end)
   end
 
   def add(%__MODULE__{stash: stash} = bank, pyramid) do
@@ -54,7 +54,19 @@ defmodule Homeworlds.Core.Bank do
     %__MODULE__{bank | stash: stash}
   end
 
-  def take(%__MODULE__{stash: stash} = bank, pyramid_id) do
+  def take(%__MODULE__{} = bank, {colour, size}) do
+    resources = show_resources(bank)
+
+    case Enum.find(resources[colour], &(&1.size == size)) do
+      nil ->
+        {{:error, :unavailable_piece}, bank}
+
+      pyramid ->
+        take_by_id(bank, pyramid.id)
+    end
+  end
+
+  def take_by_id(%__MODULE__{stash: stash} = bank, pyramid_id) do
     {pyramid, stash} = Stash.take(stash, pyramid_id)
     {pyramid, %__MODULE__{bank | stash: stash}}
   end
@@ -65,5 +77,9 @@ defmodule Homeworlds.Core.Bank do
     else
       false
     end
+  end
+
+  def has_piece?(%__MODULE__{stash: stash} = _banke, {colour, size}) do
+    Stash.has_piece?(stash, {colour, size})
   end
 end

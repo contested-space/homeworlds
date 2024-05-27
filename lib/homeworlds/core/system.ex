@@ -37,6 +37,7 @@ defmodule Homeworlds.Core.System do
   end
 
   # TODO: having the pyramid be responsable for knowing its owner is weird, I should refactor that
+  # I confirm: it's weird! Let's refactor system to have a map of players to ships
   @spec add_ship(t(), Pyramid.t(), Pyramid.owner()) :: t()
   def add_ship(%__MODULE__{ships: ships} = system, pyramid, owner) do
     new_ships = Map.put(ships, pyramid.id, Pyramid.to_ship(pyramid, owner))

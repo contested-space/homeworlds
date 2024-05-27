@@ -57,6 +57,10 @@ defmodule Homeworlds.Boundary.GameSession do
     GenServer.call(game_session_pid, :finish_turn)
   end
 
+  def play_action(game_session_pid, action) do
+    GenServer.call(game_session_pid, {:play_action, action})
+  end
+
   @impl GenServer
 
   def handle_call({:join, player}, _from, %State{board: board} = state) do
@@ -82,4 +86,47 @@ defmodule Homeworlds.Boundary.GameSession do
     new_board = Board.finish_turn(board)
     {:reply, :ok, %State{state | board: new_board}}
   end
+
+  def handle_call({:play_action, action}, _from, %State{board: board} = state) do
+    {result, new_board} = do_play_action(board, action)
+    {:reply, result, %State{state | board: new_board}}
+  end
+
+  defp do_play_action(board, {:setup, %{piece: piece, role: role, destination: destination}}) do
+    if Board.bank_has_piece?(board, piece) do
+      case role do
+        :ship ->
+          {:ok,
+           board
+           |> Board.take_resource_from_bank(piece)
+           |> Board.add_ship_to_system(destination, Board.active_player(board))}
+
+        :star ->
+          {:ok,
+           board
+           |> Board.take_resource_from_bank(piece)
+           |> Board.add_star_to_system(destination)}
+      end
+    end
+  end
+
+  # defp do_play_action(board, {:trade, ... }) do
+
+  # end
+
+  # defp do_play_action(board, {:convert, ... }) do
+
+  # end
+
+  # defp do_play_action(board, {:move, ... }) do
+
+  # end
+
+  # defp do_play_action(board, {:explore, ... }) do
+
+  # end
+
+  # defp do_play_action(board, {:sacrifice, ... }) do
+
+  # end
 end

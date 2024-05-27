@@ -18,4 +18,6 @@ defmodule Homeworlds do
   defdelegate finish_turn(game_id), to: GameManager
 
   defdelegate find_games_with_player(player), to: GameManager
+
+  defdelegate play_action(game_id, action), to: GameManager
 end

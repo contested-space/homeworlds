@@ -68,6 +68,11 @@ defmodule Homeworlds.Boundary.GameManager do
     |> GenServer.call({:finish_turn, game_id})
   end
 
+  def play_action(game_id, action) do
+    :erlang.whereis(__MODULE__)
+    |> GenServer.call({:play_action, game_id, action})
+  end
+
   @impl GenServer
   def handle_call({:create_game, _opts}, _from, %State{games: games} = state) do
     game_id = make_ref()
@@ -144,6 +149,16 @@ defmodule Homeworlds.Boundary.GameManager do
       |> Enum.find(&(&1.game_id == id))
 
     {:reply, pid, state}
+  end
+
+  def handle_call({:play_action, game_id, action}, _from, %State{} = state) do
+    game_info =
+      find_game_by_id(state, game_id)
+
+    # TODO: validate result before adding player to game info
+    result = GameSession.play_action(game_info.session_pid, action)
+
+    {:reply, result, state}
   end
 
   defp pop_game_by_id(%State{games: games} = state, game_id) do
